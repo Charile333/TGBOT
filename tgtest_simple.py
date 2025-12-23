@@ -21,7 +21,8 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Telegram Bot API 配置
-TOKEN = "8472477834:AAGs7wv6Hbm93t5B5rAj4sP2plFUaaahkfc"
+# 优先从环境变量读取，如果没有则使用默认值（不推荐在生产环境使用默认值）
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "8472477834:AAGs7wv6Hbm93t5B5rAj4sP2plFUaaahkfc")
 API_BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 # 自动检测代理配置
