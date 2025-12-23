@@ -574,10 +574,26 @@ def create_csv_file(data: List[Dict[str, Any]], filename_prefix: str) -> Optiona
         filename = f"{filename_prefix}_{int(time.time())}.csv"
         file_path = os.path.join(temp_dir, filename)
         
+        # 处理时间格式，只保留到秒
+        processed_data = []
+        for item in data:
+            processed_item = item.copy()
+            # 格式化 added_at 字段，只保留到秒
+            if 'added_at' in processed_item:
+                added_at = processed_item['added_at']
+                if isinstance(added_at, str):
+                    # 去除微秒和时区，只保留到秒
+                    # ISO 8601格式: 2025-12-23T06:35:54.841000Z -> 2025-12-23T06:35:54
+                    if '.' in added_at and 'Z' in added_at:
+                        processed_item['added_at'] = added_at.split('.')[0]
+                    elif 'Z' in added_at:
+                        processed_item['added_at'] = added_at[:-1]  # 去除Z
+            processed_data.append(processed_item)
+        
         with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
             writer.writeheader()
-            writer.writerows(data)
+            writer.writerows(processed_data)
             
         print(f"[CSV] 文件已创建: {file_path}")
         return file_path
