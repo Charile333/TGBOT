@@ -1204,8 +1204,7 @@ def handle_message(message: Dict[str, Any]) -> None:
             "• /export customers <域名> - 导出客户泄露 CSV\n"
             "• /export thirdparties <域名> - 导出第三方泄露 CSV\n"
             "• /export all <域名> - 导出全部（员工+客户+第三方）\n"
-            "• /export email <邮箱> - 导出邮箱泄露 CSV\n"
-            "• /exports - 查看所有导出任务\n\n"
+            "• /export email <邮箱> - 导出邮箱泄露 CSV\n\n"
             "⚙️ 命令列表：\n"
             "/start - 开始使用\n"
             "/help - 显示帮助信息\n\n"
@@ -1308,26 +1307,33 @@ def handle_message(message: Dict[str, Any]) -> None:
     # 处理 /export 命令 - 导出域名泄露为 CSV
     elif text.startswith("/export "):
         parts = text.replace("/export ", "").strip().split()
-        if len(parts) < 2:
+        if not parts:
             send_message(chat_id, 
                 "❌ 命令格式错误\n\n"
                 "正确格式：\n"
-                "/export <类型> <域名或邮箱>\n\n"
-                "类型：\n"
-                "• employees - 员工泄露\n"
-                "• customers - 客户泄露\n"
-                "• thirdparties - 第三方泄露\n"
-                "• all - 导出全部（员工+客户+第三方）\n"
-                "• email - 邮箱泄露\n\n"
+                "/export <域名> (导出全部)\n"
+                "或 /export <类型> <域名/邮箱>\n\n"
                 "示例：\n"
-                "/export employees example.com\n"
-                "/export all example.com\n"
+                "/export example.com (推荐)\n"
                 "/export email user@example.com"
             )
             return
         
-        export_type = parts[0].lower()
-        target = " ".join(parts[1:])
+        # 检查第一个参数是否为已知类型
+        known_types = ["employees", "customers", "thirdparties", "third_parties", "all", "email"]
+        first_arg = parts[0].lower()
+        
+        if first_arg in known_types:
+            # 如果指定了类型，必须有第二个参数（目标）
+            if len(parts) < 2:
+                send_message(chat_id, f"❌ 请提供域名或邮箱\n例如: /export {first_arg} example.com")
+                return
+            export_type = first_arg
+            target = " ".join(parts[1:])
+        else:
+            # 如果第一个参数不是类型，则默认为导出全部 (all)，且该参数就是域名
+            export_type = "all"
+            target = " ".join(parts)
         
         # 处理 /export all 命令 - 导出全部泄露类型
         if export_type == "all":
@@ -1338,10 +1344,8 @@ def handle_message(message: Dict[str, Any]) -> None:
                 return
             
             send_message(chat_id, 
-                f"📥 正在处理全部泄露导出: {normalized_domain}\n\n"
-                f"1. 正在尝试自动解锁数据...\n"
-                f"2. 正在获取并生成 CSV 文件...\n\n"
-                f"请稍候，这可能需要几分钟..."
+                f"📥 正在后台处理全部泄露导出: {normalized_domain}\n"
+                f"任务耗时可能较长，请耐心等待文件发送..."
             )
             
             leak_types = [
@@ -1372,12 +1376,11 @@ def handle_message(message: Dict[str, Any]) -> None:
                     file_path = create_csv_file(items, f"{normalized_domain}_{leak_type}")
                     if file_path:
                         caption = (
-                            f"📥 CSV 导出文件\n\n"
-                            f"域名: {normalized_domain}\n"
-                            f"类型: {type_name}\n"
-                            f"记录数: {len(items)}\n"
-                            f"本次解锁: {unlocked_count} 条"
-                        )
+                        f"📥 CSV 导出文件\n\n"
+                        f"域名: {normalized_domain}\n"
+                        f"类型: {type_name}\n"
+                        f"记录数: {len(items)}"
+                    )
                         if send_document(chat_id, file_path, caption):
                             completed_count += 1
                             try:
@@ -1435,10 +1438,16 @@ def handle_message(message: Dict[str, Any]) -> None:
             }
             type_name = type_names.get(leak_type, leak_type)
             
-            send_message(chat_id, f"📥 正在处理{type_name}泄露导出: {normalized_domain}\n正在解锁并获取数据，请稍候...")
+            send_message(chat_id, f"📥 正在后台处理{type_name}泄露导出: {normalized_domain}\n请稍候...")
             
             # 1. 解锁
-            unlock_domain_leaks(normalized_domain, leak_type, max_items=10000)
+            unlock_result = unlock_domain_leaks(normalized_domain, leak_type, max_items=10000)
+            unlocked_count = 0
+            if isinstance(unlock_result, list):
+                unlocked_count = len(unlock_result)
+                print(f"[解锁] 成功解锁 {unlocked_count} 条 {type_name} 数据")
+            elif isinstance(unlock_result, dict) and "error" in unlock_result:
+                print(f"[解锁] {type_name} 解锁失败: {unlock_result['error']}")
             
             # 2. Fetch
             items = fetch_all_domain_leaks(normalized_domain, leak_type)
@@ -1446,7 +1455,12 @@ def handle_message(message: Dict[str, Any]) -> None:
             if items:
                 file_path = create_csv_file(items, f"{normalized_domain}_{leak_type}")
                 if file_path:
-                    caption = f"📥 CSV 导出文件\n\n域名: {normalized_domain}\n类型: {type_name}\n记录数: {len(items)}"
+                    caption = (
+                        f"📥 CSV 导出文件\n\n"
+                        f"域名: {normalized_domain}\n"
+                        f"类型: {type_name}\n"
+                        f"记录数: {len(items)}"
+                    )
                     if send_document(chat_id, file_path, caption):
                         send_message(chat_id, f"✅ CSV 文件已发送")
                         try:
