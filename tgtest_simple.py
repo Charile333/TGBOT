@@ -21,8 +21,14 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Telegram Bot API 配置
-# 优先从环境变量读取，如果没有则使用默认值（不推荐在生产环境使用默认值）
-TOKEN = os.environ.get("TELEGRAM_TOKEN", "8472477834:AAGs7wv6Hbm93t5B5rAj4sP2plFUaaahkfc")
+# 优先从环境变量读取
+TOKEN = os.environ.get("TELEGRAM_TOKEN")
+if not TOKEN:
+    print("❌ 错误: 未设置 TELEGRAM_TOKEN 环境变量")
+    print("请设置环境变量: set TELEGRAM_TOKEN=你的BotToken")
+    # 为了防止程序直接崩溃，这里可以抛出异常或者让 main 函数处理
+    # 但为了简单起见，如果是在 main 中检测会更好，这里先留空，main 函数会检查连接
+    
 API_BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 # 自动检测代理配置
@@ -41,7 +47,11 @@ else:
 LEAK_API_BASE_URL = "https://api.leakradar.io"
 
 # API Key（Bearer Token）
-LEAK_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJub3ZhdGFfbW9mZmF0QDE2My5jb20iLCJqdGkiOiI3MzZhNDlkNS1lMjM2LTRhNzEtYTUyZS01ZjI0MzE2ZTIzYWUiLCJ0eXBlIjoiYWNjZXNzIn0.Fn7lxI3H4tXWWCV-ctx-1IDk3ZcPfAgdq6GPhqIG8dU"
+# 优先从环境变量读取
+LEAK_API_KEY = os.environ.get("LEAK_API_KEY")
+if not LEAK_API_KEY:
+    print("❌ 错误: 未设置 LEAK_API_KEY 环境变量")
+    print("请设置环境变量: set LEAK_API_KEY=你的APIKey")
 
 # API 请求头（Bearer Token 认证）
 LEAK_API_HEADERS = {
@@ -1543,7 +1553,7 @@ def main():
     print(f"Bot Token: {TOKEN[:10]}...")
     print(f"Telegram API 地址: {API_BASE_URL}")
     print(f"API 地址: {LEAK_API_BASE_URL}")
-    print(f"API Key: {LEAK_API_KEY[:20]}...")
+    print(f"API Key: {LEAK_API_KEY[:5]}..." if LEAK_API_KEY else "Not Set")
     print("=" * 60)
     
     # 清除 Webhook
