@@ -564,7 +564,7 @@ def create_csv_file(data: List[Dict[str, Any]], filename_prefix: str) -> Optiona
     try:
         # 确定字段
         # 根据实际数据调整字段
-        headers = ["username", "password", "url", "is_email", "unlocked", "password_strength", "added_at"]
+        headers = ["username", "password", "url", "is_email", "password_strength", "added_at"]
         
         # 创建临时目录
         temp_dir = "temp_exports"
