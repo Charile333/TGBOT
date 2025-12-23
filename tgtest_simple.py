@@ -725,7 +725,6 @@ def format_leaks_list(api_result: Dict[str, Any], leak_type: str, domain: str = 
         message_parts.append("=" * 40)
         message_parts.append(f"\n📊 统计信息:")
         message_parts.append(f"• 总数: {total} 条")
-        message_parts.append(f"• 已解锁: {total_unlocked} 条")
         message_parts.append(f"• 当前页: {page}")
         message_parts.append(f"• 每页: {page_size} 条")
         
@@ -775,7 +774,6 @@ def format_email_result(api_result: Dict[str, Any], email: str) -> str:
         message_parts.append("=" * 40)
         message_parts.append(f"\n📊 统计信息:")
         message_parts.append(f"• 总数: {total} 条")
-        message_parts.append(f"• 已解锁: {total_unlocked} 条")
         
         if items:
             message_parts.append(f"\n📝 泄露记录（显示前 {min(len(items), 10)} 条）:")
