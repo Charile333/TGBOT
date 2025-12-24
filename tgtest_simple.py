@@ -17,6 +17,26 @@ from typing import Optional, Dict, Any, List, Union
 import urllib.request
 import urllib3
 
+def load_env_file(file_path: str = ".env"):
+    """轻量级加载 .env 文件到环境变量"""
+    if not os.path.exists(file_path):
+        return
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip().strip('"').strip("'")
+        print(f"✓ 已从 {file_path} 加载配置")
+    except Exception as e:
+        print(f"⚠ 加载 {file_path} 失败: {e}")
+
+# 加载本地配置
+load_env_file()
+
 # 禁用安全请求警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
