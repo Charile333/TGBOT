@@ -53,6 +53,23 @@ if not LEAK_API_KEY:
     print("❌ 错误: 未设置 LEAK_API_KEY 环境变量")
     print("请设置环境变量: set LEAK_API_KEY=你的APIKey")
 
+# ============================================================================
+# 权限配置
+# ============================================================================
+# 允许访问的用户 ID 列表（从环境变量读取，以逗号分隔）
+# 例如：set ALLOWED_USERS=12345678,87654321
+ALLOWED_USERS_STR = os.environ.get("ALLOWED_USERS", "")
+if ALLOWED_USERS_STR:
+    try:
+        ALLOWED_USERS = [int(uid.strip()) for uid in ALLOWED_USERS_STR.split(",") if uid.strip()]
+        print(f"✓ 已加载权限白名单: {len(ALLOWED_USERS)} 个用户")
+    except ValueError:
+        print("❌ 错误: ALLOWED_USERS 环境变量格式不正确，应为逗号分隔的数字 ID")
+        ALLOWED_USERS = []
+else:
+    print("💡 提示: 未设置 ALLOWED_USERS，机器人目前为【公开访问】模式")
+    ALLOWED_USERS = []
+
 # API 请求头（Bearer Token 认证）
 LEAK_API_HEADERS = {
     "Authorization": f"Bearer {LEAK_API_KEY}"
@@ -1168,6 +1185,14 @@ def handle_message(message: Dict[str, Any]) -> None:
     user_name = user.get("first_name", "用户")
     user_id = user.get("id", 0)
     
+    # 权限检查
+    if ALLOWED_USERS and user_id not in ALLOWED_USERS:
+        print(f"[拒绝] 未授权用户尝试访问: {user_name} ({user_id})")
+        # 只在用户发送命令或消息时回复，避免在群组中过于频繁
+        if text.startswith("/"):
+            send_message(chat_id, "❌ 抱歉，您没有使用此机器人的权限。\n请联系管理员授权。")
+        return
+
     print(f"[消息] 用户 {user_name} ({user_id}): {text}")
     
     # 移除 @bot_username 部分，以便在群组中处理命令
